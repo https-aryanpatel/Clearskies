@@ -75,8 +75,50 @@ if (status.restart_count != null) {
     updateAqiBadge(aqi);
     updateHealthRecommendations(aqi);
 
-    if (window.aqiGauge && aqi !== null) window.aqiGauge.updateSeries([aqi]);
-    if (window.humidityGauge && humidity !== null) window.humidityGauge.updateSeries([humidity]);
+    if (window.aqiGauge && aqi !== null) {
+
+  window.aqiGauge.updateSeries([aqi]);
+
+  let color = "#22c55e"; // default green
+
+  if (aqi <= 50) color = "#22c55e";          // Good
+  else if (aqi <= 100) color = "#eab308";    // Moderate
+  else if (aqi <= 200) color = "#ef4444";    // Unhealthy
+  else color = "#a855f7";                    // Hazardous
+
+  window.aqiGauge.updateOptions({
+    colors: [color]
+  });
+}
+    if (window.tempGauge && temp !== null) {
+
+  window.tempGauge.updateSeries([temp]);
+
+  let color = "#3b82f6"; // cold (blue)
+
+  if (temp < 20) color = "#3b82f6";          // Cold
+  else if (temp < 30) color = "#22c55e";     // Normal
+  else if (temp < 40) color = "#f97316";     // Warm
+  else color = "#ef4444";                    // Hot
+
+  window.tempGauge.updateOptions({
+    colors: [color]
+  });
+}
+    if (window.humidityGauge && humidity !== null) {
+
+  window.humidityGauge.updateSeries([humidity]);
+
+  let color = "#3b82f6"; // low humidity (blue)
+
+  if (humidity < 30) color = "#3b82f6";      // Dry
+  else if (humidity <= 70) color = "#22c55e";// Comfortable
+  else color = "#f97316";                    // Humid
+
+  window.humidityGauge.updateOptions({
+    colors: [color]
+  });
+}
 
     updateChartsWithLatest(aqi, temp, humidity);
     updateCurrentTime();
@@ -84,15 +126,30 @@ if (status.restart_count != null) {
 
   // SOLAR DATA (optional)
   db.ref('solar').on('value', (snapshot) => {
-    const solar = snapshot.val();
-    if (!solar) return;
 
-    const servo = toNumber(solar.servo_angle);
-    const batt = toNumber(solar.battery_voltage);
+  const solar = snapshot.val();
+  if (!solar) return;
 
-    setText('servoText', servo === null ? '--' : String(servo));
-    setText('batteryText', batt === null ? '--' : String(batt));
-  });
+  const servo = toNumber(solar.servo_angle);
+
+  setText('servoText', servo);
+
+  if (window.servoGauge && servo !== null)
+      window.servoGauge.updateSeries([servo]);
+
+  // Direction logic
+  let direction = "Center";
+
+  if (servo < 70) direction = "East";
+  else if (servo > 110) direction = "West";
+
+  document.getElementById("solarDirection").innerText = direction;
+
+  // Alignment status
+  document.getElementById("solarStatus").innerText =
+      "Tracking Active";
+
+});
 }
 
 function setupEventListeners() {
