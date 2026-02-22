@@ -49,6 +49,59 @@
       border-radius: 1rem;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
+
+    .signal-container {
+  display: flex;
+  gap: 5px;
+  align-items: flex-end;
+  height: 40px;
+}
+
+.signal-bar {
+  width: 10px;
+  background: gray;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+/* Poor */
+.signal-bar.poor {
+  background: #ef4444;
+  box-shadow: 0 0 6px #ef4444;
+}
+
+/* Fair */
+.signal-bar.fair {
+  background: #f97316;
+  box-shadow: 0 0 6px #f97316;
+}
+
+/* Good */
+.signal-bar.good {
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+}
+
+/* Excellent */
+.signal-bar.excellent {
+  background: #00ffcc;
+  box-shadow: 0 0 8px #00ffcc;
+}
+
+#bar1 { height: 10px; }
+#bar2 { height: 20px; }
+#bar3 { height: 30px; }
+#bar4 { height: 40px; }
+
+.active {
+  background: #00ffcc;
+  box-shadow: 0 0 10px #00ffcc;
+}
+
+.signal-bar.active
+{
+  background: #00ffcc;
+  box-shadow: 0 0 8px #00ffcc;
+}
  /* Navigation Styles */
         #navbar {
             transition: all 0.4s ease-out;
@@ -211,7 +264,8 @@
           </div>
           <i data-lucide="thermometer" class="w-6 h-6 text-orange-400"></i>
         </div>
-        <p class="text-gray-400 text-sm mt-3">Realtime from DHT sensor</p>
+        <div class="mt-4" id="temp-gauge"></div>
+
       </div>
 
       <!-- Humidity -->
@@ -230,18 +284,34 @@
 
       <!-- Solar -->
       <div class="glass-panel p-5">
-        <div class="flex items-start justify-between">
-          <div>
-            <div class="text-gray-400 text-sm font-medium">Solar System</div>
-            <div class="mt-2 text-white">
-              <div class="text-sm text-gray-300">Servo Angle: <span id="servoText" class="font-semibold text-white">--</span>°</div>
-              <div class="text-sm text-gray-300 mt-1">Battery: <span id="batteryText" class="font-semibold text-white">--</span> V</div>
-            </div>
-          </div>
-          <i data-lucide="sun" class="w-6 h-6 text-yellow-400"></i>
-        </div>
-        <p class="text-gray-400 text-sm mt-3">Optional: from solar node</p>
-      </div>
+
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-3">
+    <div class="text-gray-400 text-sm font-medium">
+      Solar System
+    </div>
+    <i data-lucide="sun" class="w-6 h-6 text-yellow-400"></i>
+  </div>
+
+  <!-- Servo Angle -->
+  <div class="text-2xl font-bold text-white mb-2">
+    Servo Angle: <span id="servoText">--</span>°
+  </div>
+
+  <!-- Tracking Status -->
+  <div class="flex justify-between text-sm mb-3">
+
+    <div>
+      Direction:
+      <span id="solarDirection" class="text-green-400">
+        --
+      </span>
+    </div>
+
+  </div>
+
+  
+</div>
 
      <!-- ESP32 System Status -->
 <div class="glass-panel p-5">
@@ -267,6 +337,40 @@
 
     <i data-lucide="cpu" class="w-6 h-6 text-emerald-400"></i>
   </div>
+</div>
+
+<div class="glass-panel p-5">
+
+  <!-- Heading + Icon Row -->
+  <div class="flex justify-between items-center mb-3">
+
+    <!-- Heading -->
+    <div class="text-gray-400 text-sm font-medium">
+      Wifi Signal
+    </div>
+
+    <!-- Wifi Icon (Top Right) -->
+    <i data-lucide="wifi" class="w-6 h-6 text-green-400"></i>
+
+  </div>
+
+  <!-- Signal Bars -->
+  <div class="flex justify-center mb-3">
+    <div class="flex items-end gap-1 h-10">
+      <div id="bar1" class="signal-bar w-2 h-3 bg-gray-500 rounded"></div>
+      <div id="bar2" class="signal-bar w-2 h-5 bg-gray-500 rounded"></div>
+      <div id="bar3" class="signal-bar w-2 h-7 bg-gray-500 rounded"></div>
+      <div id="bar4" class="signal-bar w-2 h-9 bg-gray-500 rounded"></div>
+    </div>
+  </div>
+
+  <!-- RSSI and Quality -->
+  <div class="flex justify-center text-sm">
+    <div id="wifiText" class="text-white font-semibold">
+      -- dBm
+    </div>
+  </div>
+
 </div>
 
     </section>
@@ -501,6 +605,167 @@
         });
     });
   </script>
+  <script>
+
+const tempGaugeOptions = {
+  series: [0],
+  chart: {
+    height: 120,
+    type: 'radialBar',
+    offsetY: -10,
+    sparkline: { enabled: true }
+  },
+  plotOptions: {
+    radialBar: {
+      startAngle: -90,
+      endAngle: 90,
+      track: {
+        background: '#333',
+        strokeWidth: '97%',
+        margin: 5
+      },
+      dataLabels: {
+        name: { show: false },
+        value: {
+          offsetY: -2,
+          fontSize: '18px',
+          color: '#eee',
+          formatter: function(val) {
+            return Math.round(val) + "°C";
+          }
+        }
+      },
+      hollow: {
+        margin: 0,
+        size: '50%'
+      }
+    }
+  },
+  stroke: {
+    lineCap: 'round'
+  }
+};
+
+window.tempGauge =
+  new ApexCharts(document.querySelector("#temp-gauge"), tempGaugeOptions);
+
+window.tempGauge.render();
+
+</script>
+<script>
+const servoGaugeOptions = {
+  series: [0],
+  chart: {
+    type: 'radialBar',
+    height: 120,
+    sparkline: { enabled: true }
+  },
+  plotOptions: {
+    radialBar: {
+      startAngle: -90,
+      endAngle: 90,
+      hollow: { size: '50%' },
+      dataLabels: {
+        value: {
+          formatter: function(val) {
+            return val + "°";
+          }
+        }
+      }
+    }
+  },
+  colors: ['#facc15']
+};
+
+window.servoGauge =
+  new ApexCharts(document.querySelector("#servo-gauge"), servoGaugeOptions);
+
+window.servoGauge.render();
+</script>
+<script>
+  const database = firebase.database();
+
+  const wifiRef = database.ref("/status/wifi_rssi");
+
+  wifiRef.on("value", function(snapshot) {
+    const rssi = snapshot.val();
+
+    if (rssi !== null) {
+      document.getElementById("wifiText").innerText = rssi + " dBm";
+      updateSignalBars(rssi);
+    }
+  });
+
+  function updateSignalBars(rssi)
+{
+  const bars = [
+    document.getElementById("bar1"),
+    document.getElementById("bar2"),
+    document.getElementById("bar3"),
+    document.getElementById("bar4")
+  ];
+
+  // reset
+  bars.forEach(bar => {
+    bar.classList.remove("poor", "fair", "good", "excellent");
+  });
+
+  let qualityClass = "poor";
+  let activeBars = 1;
+
+  if (rssi > -80)
+  {
+    qualityClass = "fair";
+    activeBars = 2;
+  }
+
+  if (rssi > -70)
+  {
+    qualityClass = "good";
+    activeBars = 3;
+  }
+
+  if (rssi > -60)
+  {
+    qualityClass = "excellent";
+    activeBars = 4;
+  }
+
+  // apply color and activate bars
+  for (let i = 0; i < activeBars; i++)
+  {
+    bars[i].classList.add(qualityClass);
+  }
+}
+  function updateSignalQuality(rssi)
+{
+  let quality = "Poor";
+  let color = "#ef4444";
+
+  if (rssi > -80)
+  {
+    quality = "Fair";
+    color = "#f97316";
+  }
+
+  if (rssi > -70)
+  {
+    quality = "Good";
+    color = "#22c55e";
+  }
+
+  if (rssi > -60)
+  {
+    quality = "Excellent";
+    color = "#00ffcc";
+  }
+
+  const text = document.getElementById("wifiQuality");
+  text.innerText = quality;
+  text.style.color = color;
+}
+</script>
+
 
   <script src="script.js"></script>
   <script src="pwa.js"></script>
